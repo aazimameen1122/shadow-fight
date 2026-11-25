@@ -1,885 +1,161 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
-<meta name="color-scheme" content="dark light" />
-<link rel="icon" href="data:," />
-<title>Shadow Fight — Dark Silhouette Fighter</title>
-<style>
-:root{
-    --bg:#0b0b10; --panel:#15151d; --panel2:#1c1c26; --ink:#f4f1ea; --muted:#a9a7b8;
-    --red:#eb3c32; --red-dk:#b3241d; --blue:#5c768d; --lilac:#9b8aa6; --gold:#e8c15a;
-    --line:rgba(244,241,234,.14); --btn:#22222f;
-  }
-  @media (prefers-color-scheme: light){
-    :root{ --bg:#101016; --panel:#15151d; --panel2:#1c1c26; --ink:#f4f1ea; --muted:#a9a7b8; --line:rgba(244,241,234,.14); --btn:#22222f; }
-  }
-  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  html,body{ margin:0; padding:0; background:var(--bg); color:var(--ink);
-    font-family:"Avenir Next","Segoe UI",system-ui,-apple-system,sans-serif; }
-  body{ min-height:100dvh; display:flex; flex-direction:column; align-items:center; }
-  button{ font-family:inherit; cursor:pointer; min-height:44px; }
-  .wrap{ width:100%; max-width:980px; padding:10px 12px 18px; margin:0 auto; }
-
-  /* ---------- HUD ---------- */
-  .hud{ display:grid; grid-template-columns:1fr auto 1fr; gap:10px; align-items:start; margin-bottom:8px; }
-  .fighter-tag{ font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:4px; display:flex; justify-content:space-between; gap:8px;}
-  .fighter-tag b{ color:var(--ink); font-size:13px; }
-  .bar{ height:16px; background:#26262f; border:1px solid var(--line); border-radius:4px; overflow:hidden; position:relative; }
-  .bar > i{ display:block; height:100%; width:100%; background:linear-gradient(180deg,#ffd34d,#e8a91c); transition:width .18s ease; }
-  .bar.hurt > i{ background:linear-gradient(180deg,#ff7a6e,#eb3c32); }
-  .bar.right > i{ margin-left:auto; }
-  .meter{ height:7px; margin-top:5px; background:#26262f; border-radius:4px; overflow:hidden; border:1px solid var(--line);}
-  .meter > i{ display:block; height:100%; width:0%; background:linear-gradient(90deg,#5c768d,#9fc6e8); transition:width .15s; }
-  .meter.full > i{ background:linear-gradient(90deg,#eb3c32,#ff9a3d); }
-  .mid{ text-align:center; min-width:86px; }
-  .timer{ font-size:30px; font-weight:800; line-height:1; font-variant-numeric:tabular-nums; }
-  .timer.low{ color:var(--red); }
-  .round-pips{ display:flex; gap:5px; justify-content:center; margin-top:5px; }
-  .pip{ width:10px; height:10px; border-radius:50%; border:1px solid var(--muted); }
-  .pip.won{ background:var(--gold); border-color:var(--gold); }
-  .vs-label{ font-size:11px; letter-spacing:.2em; color:var(--muted); margin-top:2px;}
-
-  /* ---------- Stage ---------- */
-  .stage-wrap{ position:relative; border:1px solid var(--line); border-radius:10px; overflow:hidden; background:#101016; }
-  #game{ display:block; width:100%; height:auto; aspect-ratio:16/9; touch-action:none; }
-  .card .face canvas{ display:block; width:150px; height:92px; }
-  .banner{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
-    text-align:center; pointer-events:none; padding:16px; }
-  .banner .big{ font-size:clamp(34px,8vw,72px); font-weight:900; letter-spacing:.04em; line-height:1;
-    text-shadow:0 4px 0 rgba(0,0,0,.55), 0 0 34px rgba(235,60,50,.35); }
-  .banner .sub{ margin-top:8px; font-size:clamp(13px,2.6vw,18px); color:var(--ink); opacity:.92; }
-  .banner.hidden{ display:none; }
-
-  /* ---------- Screens ---------- */
-  .screen{ background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:16px; margin-top:12px; }
-  .screen h2{ margin:0 0 4px; font-size:22px; }
-  .screen p{ margin:0 0 12px; color:var(--muted); font-size:14px; line-height:1.5; }
-  .hidden{ display:none !important; }
-
-  .roster{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
-  @media (max-width:640px){ .roster{ grid-template-columns:1fr; } }
-  .card{ background:var(--panel2); border:2px solid var(--line); border-radius:10px; padding:12px; text-align:left; color:var(--ink); width:100%; }
-  .card.sel{ border-color:var(--red); }
-  .card .face{ height:92px; display:flex; align-items:flex-end; justify-content:center; background:radial-gradient(circle at 50% 68%, #333342, #17171f 78%); border-radius:6px; margin-bottom:10px; overflow:hidden;}
-  .card h3{ margin:0 0 2px; font-size:17px; }
-  .card .style{ font-size:12px; color:var(--gold); letter-spacing:.08em; text-transform:uppercase; }
-  .card .desc{ font-size:13px; color:var(--muted); line-height:1.45; margin:6px 0 10px; min-height:38px;}
-  .stat{ display:grid; grid-template-columns:44px 1fr; gap:8px; align-items:center; font-size:11px; color:var(--muted); margin-top:4px;}
-  .stat .track{ height:6px; background:#2b2b38; border-radius:3px; overflow:hidden; }
-  .stat .track i{ display:block; height:100%; background:var(--blue); }
-  .row{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:14px; }
-  .row .lbl{ font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-right:2px; }
-  .seg{ display:flex; gap:6px; flex-wrap:wrap; }
-  .seg button{ background:var(--btn); color:var(--ink); border:1px solid var(--line); border-radius:8px; padding:8px 14px; font-size:14px; font-weight:600; }
-  .seg button.sel{ background:var(--red); border-color:var(--red); color:#fff; }
-  .cta{ background:var(--red); color:#fff; border:none; border-radius:8px; padding:12px 22px; font-size:16px; font-weight:800; letter-spacing:.03em; }
-  .cta:hover{ background:var(--red-dk); }
-  .ghost{ background:var(--btn); color:var(--ink); border:1px solid var(--line); border-radius:8px; padding:10px 16px; font-size:14px; font-weight:600; }
-
-  /* ---------- Touch controls ---------- */
-  .controls{ display:none; margin-top:12px; gap:10px; }
-  body.touch .controls, body.narrow .controls{ display:flex; }
-  @media (max-width:600px){ .controls{ flex-direction:column; } }
-  .pad{ flex:1; display:flex; gap:8px; min-width:0; }
-  .pad.right{ justify-content:flex-end; }
-  .cbtn{ flex:1; max-width:76px; height:60px; border-radius:12px; border:1px solid var(--line);
-    background:var(--panel2); color:var(--ink); font-size:12px; font-weight:800; letter-spacing:.04em;
-    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; user-select:none; touch-action:none; }
-  .cbtn .ic{ font-size:19px; line-height:1; font-weight:900; }
-  .cbtn:active, .cbtn.held{ background:var(--red); border-color:var(--red); color:#fff; }
-  .cbtn.sp{ border-color:var(--gold); color:var(--gold); }
-  .cbtn.sp:active, .cbtn.sp.held{ background:var(--gold); color:#191408; }
-
-  .topbar{ display:flex; gap:8px; justify-content:flex-end; margin-bottom:8px; }
-  .topbar button{ background:var(--btn); color:var(--ink); border:1px solid var(--line); border-radius:8px; padding:8px 14px; font-size:13px; font-weight:600; }
-  .help{ margin-top:12px; font-size:13px; color:var(--muted); line-height:1.7; }
-  .help kbd{ background:#2b2b38; border:1px solid var(--line); border-bottom-width:2px; border-radius:5px; padding:1px 6px; font-family:inherit; color:var(--ink); font-size:12px; }
-  .result-stats{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:12px 0; }
-  .result-stats div{ background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:10px; text-align:center; }
-  .result-stats b{ display:block; font-size:22px; }
-  .result-stats span{ font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
-  .combo-pop{ position:absolute; top:16%; font-weight:900; font-size:clamp(18px,4vw,30px); color:var(--gold);
-    text-shadow:0 2px 0 rgba(0,0,0,.6); pointer-events:none; }
-  .combo-pop.left{ left:6%; } .combo-pop.right{ right:6%; }
-
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="color-scheme" content="dark light" />
+  <meta name="description" content="Shadow Fight — a visceral 2D silhouette martial arts fighting game. Four fighters, three arenas, arcade, versus, local 2-player and training modes." />
+  <link rel="icon" href="data:," />
+  <title>Shadow Fight — Dark Silhouette Fighter</title>
 </head>
 <body>
-<div class="wrap">
+  <div id="app">
+    <div id="stage-wrap">
+      <canvas id="game" width="960" height="540"></canvas>
 
-  <div class="topbar">
-    <button id="btnSound" type="button" aria-label="Toggle sound">Sound: On</button>
-    <button id="btnPauseTop" type="button">Pause</button>
-    <button id="btnMenuTop" type="button">Change Fighter</button>
-  </div>
-
-  <!-- HUD -->
-  <div class="hud" aria-live="off">
-    <div>
-      <div class="fighter-tag"><b id="p1Name">LOOP</b><span id="p1Wins">YOU</span></div>
-      <div class="bar" id="p1Bar"><i></i></div>
-      <div class="meter" id="p1Meter"><i></i></div>
-    </div>
-    <div class="mid">
-      <div class="timer" id="timer">60</div>
-      <div class="round-pips" id="pips"></div>
-      <div class="vs-label" id="roundLabel">ROUND 1</div>
-    </div>
-    <div>
-      <div class="fighter-tag"><span>CPU</span><b id="p2Name">RIVAL</b></div>
-      <div class="bar right" id="p2Bar"><i></i></div>
-      <div class="meter" id="p2Meter"><i></i></div>
-    </div>
-  </div>
-
-  <!-- Stage -->
-  <div class="stage-wrap" id="stageWrap">
-    <canvas id="game" width="960" height="540"></canvas>
-    <div class="banner" id="banner"><div class="big" id="bannerBig">SHADOW FIGHT</div><div class="sub" id="bannerSub">Pick your fighter below to begin</div></div>
-    <div class="combo-pop left hidden" id="comboL"></div>
-    <div class="combo-pop right hidden" id="comboR"></div>
-  </div>
-
-  <!-- Touch controls -->
-  <div class="controls" id="controls">
-    <div class="pad">
-      <button class="cbtn" data-hold="left" type="button"><span class="ic">&#9664;</span>MOVE</button>
-      <button class="cbtn" data-hold="right" type="button"><span class="ic">&#9654;</span>MOVE</button>
-      <button class="cbtn" data-tap="jump" type="button"><span class="ic">&#9650;</span>JUMP</button>
-      <button class="cbtn" data-hold="block" type="button"><span class="ic">&#9632;</span>BLOCK</button>
-    </div>
-    <div class="pad right">
-      <button class="cbtn" data-tap="punch" type="button"><span class="ic">J</span>PUNCH</button>
-      <button class="cbtn" data-tap="kick" type="button"><span class="ic">K</span>KICK</button>
-      <button class="cbtn sp" data-tap="special" type="button"><span class="ic">L</span>SPECIAL</button>
-    </div>
-  </div>
-
-  <!-- Select screen -->
-  <section class="screen" id="selectScreen">
-    <h2>Choose your fighter</h2>
-    <p>Dark silhouettes, white rim-light, three arenas under a red moon. First to win 2 rounds takes the match. Fill your blue meter to unleash a Special.</p>
-    <div class="roster" id="roster"></div>
-    <div class="row">
-      <span class="lbl">Difficulty</span>
-      <div class="seg" id="diffSeg">
-        <button type="button" data-diff="easy">Easy</button>
-        <button type="button" data-diff="normal" class="sel">Normal</button>
-        <button type="button" data-diff="hard">Hard</button>
+      <!-- In-game HUD -->
+      <div id="hud" class="hidden">
+        <div class="hud-side p1">
+          <div class="fighter-tag"><span id="name1">LOOP</span><span id="style1">Balanced</span></div>
+          <div class="bar"><i id="hpDelay1"></i><i id="hp1"></i></div>
+          <div class="meter"><i id="meter1"></i></div>
+          <div class="guard"><i id="guard1"></i></div>
+        </div>
+        <div class="hud-mid">
+          <div class="timer" id="timer">60</div>
+          <div class="round-pips" id="pips"></div>
+          <div class="vs-label" id="roundLabel">ROUND 1</div>
+        </div>
+        <div class="hud-side p2">
+          <div class="fighter-tag"><span id="style2">Heavy</span><span id="name2">MENTOR</span></div>
+          <div class="bar"><i id="hpDelay2"></i><i id="hp2"></i></div>
+          <div class="meter"><i id="meter2"></i></div>
+          <div class="guard"><i id="guard2"></i></div>
+        </div>
+        <div class="combo-pop left hidden" id="comboL"></div>
+        <div class="combo-pop right hidden" id="comboR"></div>
+        <div class="callout hidden" id="callout"></div>
+        <div class="banner hidden" id="banner"></div>
       </div>
-    </div>
-    <div class="row">
-      <span class="lbl">Arena</span>
-      <div class="seg" id="stageSeg">
-        <button type="button" data-stage="street" class="sel">Rooftop Street</button>
-        <button type="button" data-stage="lake">Moonlit Lake</button>
-        <button type="button" data-stage="yard">Old Courtyard</button>
+
+      <!-- Touch controls -->
+      <div id="touch" class="hidden">
+        <div id="joy"><div id="joyKnob"></div></div>
+        <div id="touchBtns">
+          <button class="tbtn" data-act="dodge" type="button">ROLL</button>
+          <button class="tbtn" data-act="throw" type="button">THROW</button>
+          <button class="tbtn" data-act="heavy" type="button">HEAVY</button>
+          <button class="tbtn" data-act="light" type="button">LIGHT</button>
+          <button class="tbtn sp" data-act="special" type="button">SPECIAL</button>
+        </div>
       </div>
+
+      <!-- Title screen -->
+      <section class="screen" id="screen-title">
+        <h1>SHADOW FIGHT</h1>
+        <p class="tagline">Dark silhouettes. White rim-light. Three arenas under a red moon.</p>
+        <p class="tagline dim">Four fighters. One Eclipse. First to win 2 rounds takes the match.</p>
+        <div class="row"><button class="cta" id="btnPlay" type="button">FIGHT</button></div>
+        <div class="row"><button class="ghost" id="btnHow" type="button">How to Play</button></div>
+        <p class="fine">v2.0 · Vite + vanilla JS · Web Audio, no downloads</p>
+      </section>
+
+      <!-- Mode select -->
+      <section class="screen hidden" id="screen-mode">
+        <h2>CHOOSE YOUR MODE</h2>
+        <div class="mode-grid">
+          <button class="mode-card" data-mode="arcade" type="button"><b>ARCADE LADDER</b><span>4-stage gauntlet across all arenas. Beat Eclipse, earn your rank.</span></button>
+          <button class="mode-card" data-mode="versus" type="button"><b>VERSUS CPU</b><span>Pick both fighters, the stage and the difficulty.</span></button>
+          <button class="mode-card" data-mode="local" type="button"><b>LOCAL 2-PLAYER</b><span>Two fighters, one keyboard. P1 WASD + J/K/L/U · P2 Arrows + N , . /</span></button>
+          <button class="mode-card" data-mode="training" type="button"><b>TRAINING DOJO</b><span>Lab it out. Hitbox overlay, dummy behaviour, input history.</span></button>
+        </div>
+        <div class="row"><button class="ghost" id="btnModeBack" type="button">Back</button></div>
+      </section>
+
+      <!-- Fighter select -->
+      <section class="screen hidden" id="screen-fighter">
+        <h2 id="fighterTitle">CHOOSE YOUR FIGHTER</h2>
+        <p class="fine" id="fighterSub">Player 1 — pick a fighter</p>
+        <div class="cards" id="fighterCards"></div>
+        <div id="fighterDetail" class="fighter-detail"></div>
+        <div class="row"><button class="ghost" id="btnFighterBack" type="button">Back</button></div>
+      </section>
+
+      <!-- Stage / difficulty select -->
+      <section class="screen hidden" id="screen-stage">
+        <h2>CHOOSE THE ARENA</h2>
+        <div class="seg" id="stageSeg"></div>
+        <h2 id="diffTitle">DIFFICULTY</h2>
+        <div class="seg" id="diffSeg">
+          <button data-diff="easy" type="button">Easy</button>
+          <button data-diff="normal" type="button" class="sel">Normal</button>
+          <button data-diff="hard" type="button">Hard</button>
+        </div>
+        <div class="row"><button class="cta" id="btnStartFight" type="button">START FIGHT</button></div>
+        <div class="row"><button class="ghost" id="btnStageBack" type="button">Back</button></div>
+      </section>
+
+      <!-- Training options -->
+      <section class="screen hidden" id="screen-training">
+        <h2>TRAINING DOJO</h2>
+        <p class="fine">Dummy behaviour</p>
+        <div class="seg" id="dummySeg">
+          <button data-dummy="stand" type="button" class="sel">Stand</button>
+          <button data-dummy="crouch" type="button">Crouch</button>
+          <button data-dummy="block" type="button">Block</button>
+          <button data-dummy="attack" type="button">Attack</button>
+        </div>
+        <p class="fine">Hitbox / hurtbox overlay — toggle any time with H</p>
+        <div class="row"><button class="cta" id="btnTrainingStart" type="button">ENTER THE DOJO</button></div>
+        <div class="row"><button class="ghost" id="btnTrainingBack" type="button">Back</button></div>
+      </section>
+
+      <!-- Arcade ladder -->
+      <section class="screen hidden" id="screen-arcade">
+        <h2 id="arcadeTitle">ARCADE LADDER</h2>
+        <div id="ladderList" class="ladder"></div>
+        <div class="row"><button class="cta" id="btnArcadeNext" type="button">NEXT FIGHT</button></div>
+      </section>
+
+      <!-- Result screen -->
+      <section class="screen hidden" id="screen-result">
+        <h2 id="resultTitle">You Win</h2>
+        <p id="resultSub">Match over.</p>
+        <div class="result-stats">
+          <div><b id="statRounds">–</b><span>Rounds</span></div>
+          <div><b id="statCombo">–</b><span>Best Combo</span></div>
+          <div><b id="statDmg">–</b><span>Damage Dealt</span></div>
+          <div><b id="statRank">–</b><span>Rank</span></div>
+        </div>
+        <div class="row"><button class="cta" id="btnRematch" type="button">Rematch</button></div>
+        <div class="row"><button class="ghost" id="btnChange" type="button">Change Fighter</button></div>
+      </section>
+
+      <!-- Pause / move list -->
+      <section class="screen hidden" id="screen-pause">
+        <h2>PAUSED</h2>
+        <div id="moveList" class="move-list"></div>
+        <div class="row"><button class="cta" id="btnResume" type="button">Resume</button></div>
+        <div class="row"><button class="ghost" id="btnQuit" type="button">Quit to Title</button></div>
+      </section>
+
+      <!-- How to play -->
+      <section class="screen hidden" id="screen-how">
+        <h2>HOW TO PLAY</h2>
+        <div class="help">
+          <p><b>Player 1</b> — A/D move · W jump · S crouch/block · J light · K heavy · U throw · L special · Space dodge roll · P pause</p>
+          <p><b>Player 2</b> — Arrow keys move · N light · M heavy · , special · . throw · / dodge roll</p>
+          <p><b>Moves</b> — J→J→J chains · Down+J low kick · Down+K sweep (knockdown) · Up+K anti-air launch · Forward+K lunge · Air+J knee · Air+K dive · Throw beats block · Tap back just before impact to <b>Parry</b> · Blocking fills the Guard gauge — a full gauge means Guard Break.</p>
+          <p><b>Meter</b> — land hits to fill the blue Shadow Meter. At full, L unleashes your fighter's Shadow Special.</p>
+          <p><b>Training</b> — H toggles the hitbox overlay · dummy behaviour from the Dojo menu · infinite timer, HP regenerates.</p>
+        </div>
+        <div class="row"><button class="cta" id="btnHowBack" type="button">Got it</button></div>
+      </section>
+
+      <div id="inputHistory" class="hidden"></div>
+      <div id="toast" class="hidden"></div>
     </div>
-    <div class="row">
-      <button class="cta" id="btnStart" type="button">Start Fight</button>
-    </div>
-    <div class="help">
-      <strong style="color:var(--ink)">Keyboard:</strong>
-      <kbd>A</kbd>/<kbd>D</kbd> move &nbsp;<kbd>W</kbd> jump &nbsp;<kbd>S</kbd> block &nbsp;
-      <kbd>J</kbd> punch &nbsp;<kbd>K</kbd> kick &nbsp;<kbd>L</kbd> special &nbsp;<kbd>P</kbd> pause<br>
-      Block cuts damage to a chip. Kicks are slower but longer and stronger. Land hits to charge the Special meter — at full meter, Special hits like a truck.
-    </div>
-  </section>
-
-  <!-- Result screen -->
-  <section class="screen hidden" id="resultScreen">
-    <h2 id="resultTitle">You Win</h2>
-    <p id="resultSub">Match over.</p>
-    <div class="result-stats">
-      <div><b id="statRounds">–</b><span>Rounds</span></div>
-      <div><b id="statCombo">–</b><span>Best Combo</span></div>
-      <div><b id="statDmg">–</b><span>Damage Dealt</span></div>
-    </div>
-    <div class="row">
-      <button class="cta" id="btnRematch" type="button">Rematch</button>
-      <button class="ghost" id="btnChange" type="button">Change Fighter</button>
-    </div>
-  </section>
-
-</div>
-
-<script>
-"use strict";
-/* ============================== DATA ============================== */
-var FIGHTERS = [
-  { id:"loop", name:"LOOP", style:"Balanced", accent:"#f4f1ea", shoe:"#5c768d",
-    desc:"The everyday fighter. Even speed, even power — wins by never quitting.",
-    hp:100, speed:3.4, power:1.0, reach:1.0, stats:{PWR:6, SPD:6, HP:6} },
-  { id:"mentor", name:"MENTOR", style:"Heavy", accent:"#9b8aa6", shoe:"#e5dec9",
-    desc:"Lilac cardigan, cream sunhat, heavy hands. Slow feet, devastating hits.",
-    hp:124, speed:2.7, power:1.3, reach:1.05, stats:{PWR:9, SPD:4, HP:9} },
-  { id:"sprinter", name:"SPRINTER", style:"Speed", accent:"#eb3c32", shoe:"#f4f1ea",
-    desc:"Red phone in pocket, always in a hurry. Blindingly fast, fragile frame.",
-    hp:84, speed:4.3, power:0.82, reach:0.95, stats:{PWR:5, SPD:10, HP:4} }
-];
-var DIFFS = {
-  easy:   { react:26, aggro:0.35, blockCh:0.10, dmg:0.75, think:22 },
-  normal: { react:15, aggro:0.55, blockCh:0.22, dmg:1.0,  think:13 },
-  hard:   { react:8,  aggro:0.78, blockCh:0.38, dmg:1.15, think:7  }
-};
-
-/* ============================== STATE ============================== */
-var W = 960, H = 540, FLOOR = 452;
-var canvas = document.getElementById("game"), ctx = canvas.getContext("2d");
-var state = "menu"; // menu | intro | fight | roundEnd | matchEnd | paused
-var prevState = "fight";
-var selected = 0, cpuPick = 1, difficulty = "normal", stageId = "street";
-var round = 1, wins = [0,0], timer = 60, timerAcc = 0, roundTime = 0;
-var shake = 0, hitstop = 0, slowmo = 0, frame = 0;
-var stats = { bestCombo:0, dmgDealt:0 };
-var particles = [], floaters = [];
-var keys = {}, touch = { left:false, right:false, block:false };
-var queued = { jump:false, punch:false, kick:false, special:false };
-var soundOn = true, audioCtx = null;
-
-function mkFighter(def, x, facing, isPlayer){
-  return {
-    def:def, x:x, y:FLOOR, vx:0, vy:0, facing:facing, isPlayer:isPlayer,
-    hp:def.hp, maxhp:def.hp, meter:0,
-    state:"idle", stateT:0, atkDidHit:false,
-    crouch:false, blocking:false, onGround:true,
-    combo:0, comboT:0, lastHitBy:0, walkPhase:0, hurtT:0,
-    aiT:0, aiMove:0, aiBlockT:0
-  };
-}
-var P1 = mkFighter(FIGHTERS[0], 300, 1, true);
-var P2 = mkFighter(FIGHTERS[1], 660, -1, false);
-
-/* ============================== AUDIO ============================== */
-function ac(){
-  if(!audioCtx){ try{ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} }
-  if(audioCtx && audioCtx.state === "suspended") audioCtx.resume();
-  return audioCtx;
-}
-function tone(freq, dur, type, vol, slide){
-  if(!soundOn) return; var a = ac(); if(!a) return;
-  var o = a.createOscillator(), g = a.createGain();
-  o.type = type||"square"; o.frequency.setValueAtTime(freq, a.currentTime);
-  if(slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, freq+slide), a.currentTime+dur);
-  g.gain.setValueAtTime(vol||0.12, a.currentTime);
-  g.gain.exponentialRampToValueAtTime(0.001, a.currentTime+dur);
-  o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime+dur);
-}
-function noise(dur, vol){
-  if(!soundOn) return; var a = ac(); if(!a) return;
-  var n = Math.floor(a.sampleRate*dur), buf = a.createBuffer(1, n, a.sampleRate), d = buf.getChannelData(0);
-  for(var i=0;i<n;i++) d[i] = (Math.random()*2-1)*(1-i/n);
-  var s = a.createBufferSource(); s.buffer = buf;
-  var g = a.createGain(); g.gain.value = vol||0.2;
-  var f = a.createBiquadFilter(); f.type="lowpass"; f.frequency.value = 900;
-  s.connect(f); f.connect(g); g.connect(a.destination); s.start();
-}
-var sfx = {
-  swing:function(){ noise(0.07, 0.06); },
-  hit:function(hard){ noise(0.12, hard?0.32:0.2); tone(hard?120:160, 0.12, "square", 0.14, -70); },
-  block:function(){ tone(300, 0.06, "square", 0.08, -120); noise(0.05,0.05); },
-  jump:function(){ tone(240, 0.14, "sine", 0.07, 160); },
-  special:function(){ tone(90, 0.4, "sawtooth", 0.16, 320); noise(0.3, 0.14); },
-  ko:function(){ tone(70, 0.7, "sawtooth", 0.2, -40); noise(0.5, 0.25); },
-  bell:function(){ tone(880, 0.5, "sine", 0.12, -60); tone(1320, 0.4, "sine", 0.06, -80); },
-  count:function(){ tone(520, 0.09, "square", 0.1); }
-};
-
-/* ============================== UI BUILD ============================== */
-var rosterEl = document.getElementById("roster");
-FIGHTERS.forEach(function(f, i){
-  var b = document.createElement("button");
-  b.type = "button"; b.className = "card" + (i===0 ? " sel" : "");
-  var statsHtml = "";
-  ["PWR","SPD","HP"].forEach(function(k){
-    statsHtml += '<div class="stat"><span>'+k+'</span><span class="track"><i style="width:'+(f.stats[k]*10)+'%"></i></span></div>';
-  });
-  b.innerHTML = '<div class="face"><canvas width="150" height="92"></canvas></div>' +
-    '<div class="style">'+f.style+'</div><h3>'+f.name+'</h3>' +
-    '<div class="desc">'+f.desc+'</div>' + statsHtml;
-  b.addEventListener("click", function(){
-    selected = i;
-    rosterEl.querySelectorAll(".card").forEach(function(c, j){ c.classList.toggle("sel", j===i); });
-    sfx.count();
-  });
-  rosterEl.appendChild(b);
-  drawPortrait(b.querySelector("canvas").getContext("2d"), f);
-});
-function drawPortrait(c, f){
-  c.clearRect(0,0,150,92);
-  c.save(); c.translate(75, 90);
-  drawBody(c, { def:f, x:0, vx:0, facing:1, state:"idle", stateT:0, walkPhase:0, hurtT:0, hurtState:0, blocking:false, crouch:false, onGround:true }, 0.62, 6);
-  c.restore();
-}
-document.getElementById("diffSeg").addEventListener("click", function(e){
-  var b = e.target.closest("button"); if(!b) return;
-  difficulty = b.dataset.diff;
-  this.querySelectorAll("button").forEach(function(x){ x.classList.toggle("sel", x===b); });
-});
-document.getElementById("stageSeg").addEventListener("click", function(e){
-  var b = e.target.closest("button"); if(!b) return;
-  stageId = b.dataset.stage;
-  this.querySelectorAll("button").forEach(function(x){ x.classList.toggle("sel", x===b); });
-});
-
-/* ============================== FLOW ============================== */
-var banner = document.getElementById("banner"), bannerBig = document.getElementById("bannerBig"), bannerSub = document.getElementById("bannerSub");
-function showBanner(big, sub){ bannerBig.textContent = big; bannerSub.textContent = sub||""; banner.classList.remove("hidden"); }
-function hideBanner(){ banner.classList.add("hidden"); }
-
-function startMatch(){
-  cpuPick = (selected + 1 + Math.floor(Math.random()*(FIGHTERS.length-1))) % FIGHTERS.length;
-  wins = [0,0]; round = 1; stats = { bestCombo:0, dmgDealt:0 };
-  document.getElementById("p1Name").textContent = FIGHTERS[selected].name;
-  document.getElementById("p2Name").textContent = FIGHTERS[cpuPick].name;
-  document.getElementById("selectScreen").classList.add("hidden");
-  document.getElementById("resultScreen").classList.add("hidden");
-  startRound();
-}
-function startRound(){
-  P1 = mkFighter(FIGHTERS[selected], 300, 1, true);
-  P2 = mkFighter(FIGHTERS[cpuPick], 660, -1, false);
-  timer = 60; timerAcc = 0; roundTime = 0; particles = []; floaters = [];
-  document.getElementById("roundLabel").textContent = "ROUND " + round;
-  state = "intro"; introT = 0;
-  showBanner("ROUND " + round, FIGHTERS[selected].name + "  vs  " + FIGHTERS[cpuPick].name);
-  updateHUD(); updatePips();
-}
-var introT = 0;
-function endRound(winnerIdx, byKO){
-  state = "roundEnd"; roundTime = 0;
-  wins[winnerIdx]++;
-  updatePips();
-  if(byKO) sfx.ko();
-  if(wins[winnerIdx] >= 2){
-    setTimeout(function(){ endMatch(winnerIdx); }, 1600);
-    showBanner(winnerIdx===0 ? "K.O. — YOU TAKE THE MATCH" : "K.O. — CPU TAKES THE MATCH", "");
-  } else {
-    showBanner(byKO ? "K.O.!" : "TIME — " + (winnerIdx===0 ? "YOU WIN THE ROUND" : "CPU WINS THE ROUND"), "Round " + (round+1) + " coming up");
-    setTimeout(function(){ if(state==="roundEnd"){ round++; startRound(); } }, 2100);
-  }
-}
-function endMatch(winnerIdx){
-  state = "matchEnd";
-  hideBanner();
-  var rs = document.getElementById("resultScreen");
-  rs.classList.remove("hidden");
-  document.getElementById("resultTitle").textContent = winnerIdx===0 ? "You Win the Match" : FIGHTERS[cpuPick].name + " Wins the Match";
-  document.getElementById("resultSub").textContent = winnerIdx===0
-    ? "The silhouette stands. " + FIGHTERS[cpuPick].name + " is down — rematch?"
-    : "Down this time. Adjust, block more, and take the rematch.";
-  document.getElementById("statRounds").textContent = wins[0] + " – " + wins[1];
-  document.getElementById("statCombo").textContent = "x" + stats.bestCombo;
-  document.getElementById("statDmg").textContent = Math.round(stats.dmgDealt);
-}
-document.getElementById("btnStart").addEventListener("click", function(){ ac(); startMatch(); });
-document.getElementById("btnRematch").addEventListener("click", function(){ ac(); startMatch(); });
-document.getElementById("btnChange").addEventListener("click", toMenu);
-document.getElementById("btnMenuTop").addEventListener("click", toMenu);
-function toMenu(){
-  state = "menu";
-  document.getElementById("selectScreen").classList.remove("hidden");
-  document.getElementById("resultScreen").classList.add("hidden");
-  showBanner("SHADOW FIGHT", "Pick your fighter below to begin");
-  P1 = mkFighter(FIGHTERS[selected], 300, 1, true);
-  P2 = mkFighter(FIGHTERS[cpuPick], 660, -1, false);
-  wins=[0,0]; round=1; timer=60; updateHUD(); updatePips();
-  document.getElementById("roundLabel").textContent = "ROUND 1";
-}
-document.getElementById("btnSound").addEventListener("click", function(){
-  soundOn = !soundOn; this.textContent = "Sound: " + (soundOn ? "On" : "Off");
-  if(soundOn) sfx.count();
-});
-function togglePause(){
-  if(state === "fight" || state === "intro"){ prevState = state; state = "paused"; showBanner("PAUSED", "Press P or Pause to resume"); }
-  else if(state === "paused"){ state = prevState; hideBanner(); }
-}
-document.getElementById("btnPauseTop").addEventListener("click", togglePause);
-
-/* ============================== INPUT ============================== */
-window.addEventListener("keydown", function(e){
-  var k = e.key.toLowerCase();
-  if(["a","d","w","s","j","k","l","p"," "].indexOf(k) >= 0) e.preventDefault();
-  if(k === "p"){ togglePause(); return; }
-  keys[k] = true;
-  if(k === "w") queued.jump = true;
-  if(k === "j") queued.punch = true;
-  if(k === "k") queued.kick = true;
-  if(k === "l") queued.special = true;
-});
-window.addEventListener("keyup", function(e){ keys[e.key.toLowerCase()] = false; });
-
-if(window.matchMedia && window.matchMedia("(pointer: coarse)").matches) document.body.classList.add("touch");
-if(window.innerWidth < 760) document.body.classList.add("narrow");
-window.addEventListener("resize", function(){ document.body.classList.toggle("narrow", window.innerWidth < 760); });
-
-document.querySelectorAll(".cbtn").forEach(function(btn){
-  var hold = btn.dataset.hold, tap = btn.dataset.tap;
-  function on(e){ e.preventDefault(); ac(); btn.classList.add("held");
-    if(hold) touch[hold] = true;
-    if(tap) queued[tap] = true;
-  }
-  function off(e){ if(e) e.preventDefault(); btn.classList.remove("held"); if(hold) touch[hold] = false; }
-  btn.addEventListener("pointerdown", on);
-  btn.addEventListener("pointerup", off);
-  btn.addEventListener("pointerleave", off);
-  btn.addEventListener("pointercancel", off);
-  btn.addEventListener("contextmenu", function(e){ e.preventDefault(); });
-});
-
-/* ============================== COMBAT ============================== */
-var ATTACKS = {
-  punch:   { dur:16, active:[5,9],   range:64, dmg:6,  meter:9,  push:3, stun:12, kb:2.2 },
-  kick:    { dur:26, active:[10,17], range:82, dmg:11, meter:13, push:5, stun:17, kb:3.6 },
-  special: { dur:34, active:[12,22], range:104,dmg:24, meter:0,  push:9, stun:26, kb:7.5 }
-};
-function startAttack(f, kind){
-  if(f.state === "attack" || f.state === "hurt" || f.state === "ko") return;
-  if(kind === "special" && f.meter < 100) return;
-  if(kind === "special"){ f.meter = 0; sfx.special(); }
-  else sfx.swing();
-  f.state = "attack"; f.atk = kind; f.stateT = 0; f.atkDidHit = false;
-  if(!f.onGround) f.vx = f.facing * 1.2;
-}
-function hurtBox(f){ return { x:f.x-24, y:f.y-118, w:48, h:118 }; }
-function attackBox(f){
-  var a = ATTACKS[f.atk]; if(!a) return null;
-  if(f.stateT < a.active[0] || f.stateT > a.active[1]) return null;
-  var r = a.range * f.def.reach;
-  var x = f.facing > 0 ? f.x + 14 : f.x - 14 - r;
-  var y = f.atk === "kick" ? f.y - 62 : (f.atk === "special" ? f.y - 104 : f.y - 100);
-  return { x:x, y:y, w:r, h: f.atk === "kick" ? 30 : 34 };
-}
-function overlap(a, b){ return a && b && a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y; }
-
-function resolveHit(att, def){
-  var a = ATTACKS[att.atk];
-  var dmgMul = att.isPlayer ? 1 : DIFFS[difficulty].dmg;
-  var blocked = def.blocking && def.onGround && def.state !== "attack";
-  var dmg = a.dmg * att.def.power * dmgMul;
-  if(blocked) dmg = Math.max(1, dmg * 0.12);
-  def.hp = Math.max(0, def.hp - dmg);
-  att.meter = Math.min(100, att.meter + a.meter);
-  def.meter = Math.min(100, def.meter + 4);
-  att.combo++; att.comboT = 70;
-  if(att.isPlayer){ stats.dmgDealt += dmg; if(att.combo > stats.bestCombo) stats.bestCombo = att.combo; }
-  def.vx = att.facing * (blocked ? a.kb*0.4 : a.kb);
-  if(!blocked){
-    def.state = "hurt"; def.stateT = 0; def.hurtT = a.stun; def.combo = 0;
-    hitstop = att.atk === "special" ? 7 : 3;
-    shake = att.atk === "special" ? 10 : (att.atk === "kick" ? 6 : 4);
-    sfx.hit(att.atk !== "punch");
-  } else { sfx.block(); }
-  spawnHit(def.x, def.y - 86, blocked, att.atk === "special");
-  addFloater(def.x, def.y - 138, blocked ? "BLOCK" : "-" + Math.round(dmg), blocked ? "#9fc6e8" : (att.atk==="special" ? "#ff9a3d" : "#f4f1ea"));
-  showComboPop(att);
-  if(def.hp <= 0 && state === "fight"){
-    def.state = "ko"; def.stateT = 0; def.vy = -6; def.vx = att.facing * 5; shake = 14; slowmo = 26;
-    endRound(att.isPlayer ? 0 : 1, true);
-  }
-}
-function spawnHit(x, y, blocked, big){
-  var n = big ? 26 : 12;
-  for(var i=0;i<n;i++){
-    var ang = Math.random()*Math.PI*2, sp = 1 + Math.random()*(big?5:3.2);
-    particles.push({ x:x, y:y, vx:Math.cos(ang)*sp, vy:Math.sin(ang)*sp - 1, life:16+Math.random()*14,
-      col: blocked ? "#9fc6e8" : (Math.random()<0.4 ? "#eb3c32" : "#f4f1ea"), r: big?3:2 });
-  }
-}
-function addFloater(x, y, txt, col){ floaters.push({ x:x, y:y, txt:txt, col:col, life:44 }); }
-var comboL = document.getElementById("comboL"), comboR = document.getElementById("comboR");
-function showComboPop(f){
-  if(f.combo < 2) return;
-  var el = f.isPlayer ? comboL : comboR;
-  el.textContent = f.combo + " HITS";
-  el.classList.remove("hidden");
-  clearTimeout(el._t);
-  el._t = setTimeout(function(){ el.classList.add("hidden"); }, 650);
-}
-
-/* ============================== AI ============================== */
-function aiControl(f, foe){
-  var d = DIFFS[difficulty];
-  f.aiT--;
-  var dist = Math.abs(foe.x - f.x);
-  var dir = foe.x > f.x ? 1 : -1;
-  f.aiMove = 0;
-  f.blocking = false;
-  // React to incoming attack
-  if(foe.state === "attack" && dist < 120 && Math.random() < d.blockCh + 0.3 && f.aiBlockT <= 0){
-    f.aiBlockT = 14 + Math.random()*10;
-  }
-  if(f.aiBlockT > 0){ f.aiBlockT--; f.blocking = true; return; }
-  if(f.aiT <= 0){
-    f.aiT = d.think + Math.random()*10;
-    var r = Math.random();
-    if(dist > 190){ f.aiMove = dir; if(r < 0.12 && f.onGround){ f.vy = -12.5; f.onGround = false; sfx.jump(); } }
-    else if(dist > 92){
-      f.aiMove = dir;
-      if(r < d.aggro * 0.5) startAttack(f, Math.random() < 0.5 ? "kick" : "punch");
-    } else {
-      if(r < d.aggro){
-        if(f.meter >= 100 && Math.random() < 0.6) startAttack(f, "special");
-        else startAttack(f, Math.random() < 0.55 ? "punch" : "kick");
-      } else if(r < d.aggro + 0.18){ f.aiMove = -dir; }
-      else if(r < d.aggro + 0.3){ f.aiBlockT = 12; }
-    }
-    if(dist > 320 && Math.random() < 0.2) f.aiMove = dir;
-  }
-  if(dist > 88) f.aiMove = dir;
-  else if(dist < 52) f.aiMove = -dir;
-}
-
-/* ============================== UPDATE ============================== */
-function stepFighter(f, foe, input){
-  f.stateT++;
-  if(f.comboT > 0){ f.comboT--; if(f.comboT === 0) f.combo = 0; }
-  if(f.state === "ko"){
-    f.vy += 0.7; f.y += f.vy; f.x += f.vx; f.vx *= 0.92;
-    if(f.y > FLOOR){ f.y = FLOOR; f.vy = 0; }
-    return;
-  }
-  if(f.state === "hurt"){
-    if(f.stateT >= f.hurtT){ f.state = "idle"; f.stateT = 0; }
-  } else if(f.state === "attack"){
-    var a = ATTACKS[f.atk];
-    if(!f.atkDidHit){
-      var ab = attackBox(f);
-      if(ab && overlap(ab, hurtBox(foe)) && foe.state !== "ko"){ f.atkDidHit = true; resolveHit(f, foe); }
-    }
-    if(f.stateT >= a.dur){ f.state = "idle"; f.stateT = 0; f.atk = null; }
-  } else {
-    // free state: act on input
-    f.blocking = !!input.block;
-    if(input.punch) startAttack(f, "punch");
-    else if(input.kick) startAttack(f, "kick");
-    else if(input.special) startAttack(f, "special");
-    else if(input.jump && f.onGround){ f.vy = -12.8; f.onGround = false; sfx.jump(); }
-    var mv = (input.right ? 1 : 0) - (input.left ? 1 : 0);
-    if(!f.blocking || !f.onGround){
-      f.vx = mv * f.def.speed * (f.onGround ? 1 : 0.75);
-      if(mv !== 0) f.walkPhase += 0.22;
-    } else f.vx = 0;
-  }
-  if(f.state !== "attack" && f.state !== "hurt") f.blocking = f.blocking && input.block;
-
-  // physics
-  if(!f.onGround || f.y < FLOOR){
-    f.vy += 0.72; f.y += f.vy;
-    if(f.y >= FLOOR){ f.y = FLOOR; f.vy = 0; f.onGround = true; }
-  }
-  f.x += f.vx;
-  if(f.state === "hurt") f.vx *= 0.82;
-  f.x = Math.max(36, Math.min(W-36, f.x));
-  // face opponent when grounded & free
-  if(f.onGround && f.state !== "attack" && f.state !== "hurt") f.facing = foe.x >= f.x ? 1 : -1;
-  // body push
-  if(Math.abs(f.x - foe.x) < 44 && Math.abs(f.y - foe.y) < 90){
-    var push = (44 - Math.abs(f.x - foe.x)) / 2;
-    var dir = f.x < foe.x ? -1 : 1;
-    f.x = Math.max(36, Math.min(W-36, f.x + push*dir));
-  }
-}
-
-function update(){
-  frame++;
-  if(hitstop > 0){ hitstop--; render(); return; }
-  var dt = slowmo > 0 ? 0.35 : 1;
-  if(slowmo > 0) slowmo--;
-
-  if(state === "intro"){
-    introT += dt;
-    if(introT > 55 && introT <= 56){ showBanner("FIGHT!", ""); sfx.bell(); }
-    if(introT > 88){ state = "fight"; hideBanner(); }
-  }
-  if(state === "fight"){
-    roundTime += dt;
-    timerAcc += dt;
-    if(timerAcc >= 60){ timerAcc = 0; timer--; if(timer <= 10 && timer > 0) sfx.count();
-      if(timer <= 0){ timer = 0;
-        var w = P1.hp === P2.hp ? (Math.random()<0.5?0:1) : (P1.hp > P2.hp ? 0 : 1);
-        endRound(w, false);
-      }
-      document.getElementById("timer").textContent = timer;
-      document.getElementById("timer").classList.toggle("low", timer <= 10);
-    }
-    var pIn = {
-      left: keys["a"] || touch.left, right: keys["d"] || touch.right,
-      block: keys["s"] || touch.block,
-      jump: queued.jump, punch: queued.punch, kick: queued.kick, special: queued.special
-    };
-    stepFighter(P1, P2, pIn);
-    aiControl(P2, P1);
-    var aiIn = { left: P2.aiMove < 0, right: P2.aiMove > 0, block: P2.blocking, jump:false, punch:false, kick:false, special:false };
-    // AI attacks are triggered inside aiControl via startAttack; movement/blocking fed here:
-    stepFighter(P2, P1, aiIn);
-    queued.jump = queued.punch = queued.kick = queued.special = false;
-    updateHUD();
-  }
-  if(state === "roundEnd" || state === "matchEnd"){
-    stepFighter(P1, P2, {left:false,right:false,block:false});
-    stepFighter(P2, P1, {left:false,right:false,block:false});
-  }
-  // particles
-  for(var i = particles.length-1; i >= 0; i--){
-    var p = particles[i]; p.x += p.vx*dt; p.y += p.vy*dt; p.vy += 0.25*dt; p.life -= dt;
-    if(p.life <= 0) particles.splice(i,1);
-  }
-  for(var j = floaters.length-1; j >= 0; j--){ floaters[j].y -= 0.8*dt; floaters[j].life -= dt; if(floaters[j].life <= 0) floaters.splice(j,1); }
-  if(shake > 0) shake *= 0.86; if(shake < 0.3) shake = 0;
-  render();
-  requestAnimationFrame(update);
-}
-
-function updateHUD(){
-  var b1 = document.querySelector("#p1Bar i"), b2 = document.querySelector("#p2Bar i");
-  b1.style.width = (P1.hp / P1.maxhp * 100) + "%";
-  b2.style.width = (P2.hp / P2.maxhp * 100) + "%";
-  document.getElementById("p1Bar").classList.toggle("hurt", P1.hp < P1.maxhp*0.3);
-  document.getElementById("p2Bar").classList.toggle("hurt", P2.hp < P2.maxhp*0.3);
-  var m1 = document.querySelector("#p1Meter i"), m2 = document.querySelector("#p2Meter i");
-  m1.style.width = P1.meter + "%"; m2.style.width = P2.meter + "%";
-  document.getElementById("p1Meter").classList.toggle("full", P1.meter >= 100);
-  document.getElementById("p2Meter").classList.toggle("full", P2.meter >= 100);
-  document.getElementById("timer").textContent = timer;
-}
-function updatePips(){
-  var el = document.getElementById("pips"); el.innerHTML = "";
-  for(var i=0;i<2;i++){ var s = document.createElement("span"); s.className = "pip" + (wins[0] > i ? " won" : ""); el.appendChild(s); }
-  var sep = document.createElement("span"); sep.style.width = "8px"; el.appendChild(sep);
-  for(var j=0;j<2;j++){ var s2 = document.createElement("span"); s2.className = "pip" + (wins[1] > j ? " won" : ""); el.appendChild(s2); }
-}
-
-/* ============================== DRAWING ============================== */
-function drawBackground(c){
-  var g = c.createLinearGradient(0,0,0,H);
-  if(stageId === "lake"){ g.addColorStop(0,"#0d1420"); g.addColorStop(0.62,"#131c2b"); g.addColorStop(0.63,"#0a0f18"); g.addColorStop(1,"#070a10"); }
-  else if(stageId === "yard"){ g.addColorStop(0,"#141118"); g.addColorStop(0.62,"#1d1822"); g.addColorStop(0.63,"#100d13"); g.addColorStop(1,"#0a0810"); }
-  else { g.addColorStop(0,"#101016"); g.addColorStop(0.62,"#181824"); g.addColorStop(0.63,"#0d0d13"); g.addColorStop(1,"#08080d"); }
-  c.fillStyle = g; c.fillRect(0,0,W,H);
-
-  // moon
-  var mx = stageId === "lake" ? 720 : 800, my = 92;
-  c.save();
-  c.beginPath(); c.arc(mx,my,46,0,Math.PI*2); c.fillStyle = "#eb3c32"; c.globalAlpha = 0.9; c.fill();
-  c.beginPath(); c.arc(mx,my,64,0,Math.PI*2); c.strokeStyle = "rgba(235,60,50,.25)"; c.lineWidth = 10; c.stroke();
-  c.restore();
-  // stars / dust
-  c.fillStyle = "rgba(244,241,234,.5)";
-  for(var i=0;i<40;i++){ var sx = (i*173)%W, sy = (i*97)%210 + 8; c.globalAlpha = 0.14 + ((i*7)%10)/28; c.fillRect(sx, sy, 2, 2); }
-  c.globalAlpha = 1;
-
-  c.fillStyle = "#0a0a0f";
-  if(stageId === "street"){
-    // skyline rooftops
-    var xs = [0,90,210,330,470,600,730,850];
-    var hs = [150,190,130,205,160,185,140,175];
-    for(var b=0;b<xs.length;b++){
-      c.fillRect(xs[b], FLOOR-hs[b]-58, 118, hs[b]+58);
-      c.fillStyle = "rgba(232,193,90,.5)";
-      for(var wy=0; wy<3; wy++) for(var wx=0; wx<3; wx++)
-        if(((b+wy*3+wx)%4)===0) c.fillRect(xs[b]+14+wx*34, FLOOR-hs[b]-30+wy*42, 9, 12);
-      c.fillStyle = "#0a0a0f";
-    }
-    // chinar tree silhouette right
-    tree(c, 66, FLOOR, 1);
-  } else if(stageId === "lake"){
-    // mountains + shikara + houseboat silhouettes
-    c.beginPath(); c.moveTo(0,300); c.lineTo(150,196); c.lineTo(300,286); c.lineTo(470,180); c.lineTo(640,292); c.lineTo(800,214); c.lineTo(960,300); c.lineTo(960,342); c.lineTo(0,342); c.closePath(); c.fill();
-    c.fillRect(90, 316, 130, 20); c.fillRect(112, 298, 84, 18); // houseboat
-    c.beginPath(); c.moveTo(640,330); c.quadraticCurveTo(700,344,762,330); c.lineTo(748,322); c.lineTo(656,322); c.closePath(); c.fill(); // shikara
-    c.strokeStyle = "rgba(159,198,232,.28)"; c.lineWidth = 2;
-    for(var r=0;r<4;r++){ c.beginPath(); c.moveTo(60+r*230, 486+r*11); c.lineTo(150+r*230, 486+r*11); c.stroke(); }
-    tree(c, 892, FLOOR, 1);
-  } else {
-    // courtyard: haveli arches + khatamband band
-    c.fillRect(60, 150, 840, 192);
-    c.fillStyle = "#17121e";
-    for(var a2=0;a2<5;a2++){
-      var ax = 96 + a2*168;
-      c.beginPath(); c.moveTo(ax, 342); c.lineTo(ax, 236); c.quadraticCurveTo(ax+52, 188, ax+104, 236); c.lineTo(ax+104, 342); c.closePath(); c.fill();
-    }
-    c.fillStyle = "#0a0a0f"; c.fillRect(60, 138, 840, 12);
-    c.strokeStyle = "rgba(244,241,234,.16)"; c.lineWidth = 2;
-    for(var d2=0; d2<12; d2++){ c.strokeRect(84+d2*66, 112, 30, 20); }
-    tree(c, 884, FLOOR, 0.9);
-  }
-  // floor
-  c.fillStyle = stageId === "lake" ? "#0a1018" : "#0c0c12";
-  c.fillRect(0, FLOOR, W, H-FLOOR);
-  c.fillStyle = "rgba(244,241,234,.10)"; c.fillRect(0, FLOOR, W, 2);
-  c.fillStyle = "rgba(0,0,0,.35)";
-  c.fillRect(0, FLOOR+34, W, 3); c.fillRect(0, FLOOR+62, W, 3);
-}
-function tree(c, x, base, s){
-  c.save(); c.translate(x, base); c.scale(s, s); c.fillStyle = "#060609";
-  c.fillRect(-4, -118, 8, 118);
-  c.beginPath();
-  c.arc(-26,-138,30,0,Math.PI*2); c.arc(8,-158,38,0,Math.PI*2); c.arc(34,-132,26,0,Math.PI*2); c.arc(-2,-122,30,0,Math.PI*2);
-  c.fill(); c.restore();
-}
-
-/* Fighter body: drawn facing +x, origin at feet centre. scale s. */
-function drawBody(c, f, s, t){
-  var def = f.def, dir = f.facing;
-  var attacking = f.state === "attack";
-  var a = attacking ? ATTACKS[f.atk] : null;
-  var prog = attacking ? f.stateT / a.dur : 0;
-  var ext = 0; // limb extension 0..1
-  if(attacking){
-    if(prog < 0.3) ext = prog/0.3 * 0.4;
-    else if(prog < 0.55) ext = 0.4 + (prog-0.3)/0.25 * 0.6;
-    else ext = Math.max(0, 1 - (prog-0.55)/0.45);
-  }
-  var hurtLean = f.state === "hurt" ? Math.sin(Math.min(1, f.stateT/Math.max(1,f.hurtT)) * Math.PI) * 10 : 0;
-  var koFall = f.state === "ko" ? Math.min(1, f.stateT/16) : 0;
-  var bob = (f.state === "idle" && f.onGround) ? Math.sin((t||0)/14 + f.x*0.01) * 2 : 0;
-  var walk = (!f.onGround || f.blocking || attacking || f.state==="hurt") ? 0 : Math.sin(f.walkPhase) * (Math.abs(f.vx) > 0.2 ? 1 : 0);
-
-  c.save();
-  c.scale(dir * s, s);
-  if(koFall > 0){ c.translate(0, -6*koFall); c.rotate(-1.35 * koFall); c.translate(-10*koFall, 26*koFall); }
-
-  var hipY = -52 + bob - koFall*20, shY = -96 + bob - koFall*20;
-  var lean = (attacking && f.atk !== "kick" ? ext*7 : 0) - hurtLean + (f.blocking ? -4 : 0);
-  var hipX = lean*0.4, shX = lean;
-
-  var body = "#0d0d0f", rim = "#f4f1ea";
-  c.lineCap = "round"; c.lineJoin = "round";
-
-  function limb(x1,y1,x2,y2,x3,y3,w,col){
-    c.strokeStyle = col; c.lineWidth = w;
-    c.beginPath(); c.moveTo(x1,y1); c.lineTo(x2,y2); c.lineTo(x3,y3); c.stroke();
-  }
-  // far limbs (dimmer rim)
-  var farCol = "#0d0d0f";
-  // far leg
-  var fLegSwing = -walk*14;
-  limb(hipX, hipY, hipX-4+fLegSwing*0.5, -26, hipX-6+fLegSwing, -2, 11, farCol);
-  // near leg
-  var kickExt = (attacking && f.atk === "kick") ? ext : 0;
-  var spExt = (attacking && f.atk === "special") ? ext : 0;
-  if(kickExt > 0 || spExt > 0){
-    var kx = 16 + (kickExt*58 + spExt*74), ky = -54 - spExt*22;
-    limb(hipX, hipY, hipX+22, -34, kx, ky, 11, body);
-    // shoe
-    c.fillStyle = def.shoe; c.beginPath(); c.ellipse(kx+6, ky+2, 9, 5, 0, 0, Math.PI*2); c.fill();
-  } else {
-    var nLegSwing = walk*14;
-    limb(hipX, hipY, hipX+5+nLegSwing*0.5, -26, hipX+7+nLegSwing, -2, 11, body);
-    c.fillStyle = def.shoe; c.beginPath(); c.ellipse(hipX+11+nLegSwing, 0, 9, 4.5, 0, 0, Math.PI*2); c.fill();
-    c.fillStyle = def.shoe; c.beginPath(); c.ellipse(hipX-2+fLegSwing, 0, 9, 4.5, 0, 0, Math.PI*2); c.fill();
-  }
-  // torso
-  c.strokeStyle = body; c.lineWidth = 17;
-  c.beginPath(); c.moveTo(hipX, hipY); c.lineTo(shX, shY); c.stroke();
-  // accent garment: mentor cardigan / sprinter red sash / loop plain
-  if(def.id === "mentor"){ c.strokeStyle = "#9b8aa6"; c.lineWidth = 5; c.beginPath(); c.moveTo(hipX-3, hipY+2); c.lineTo(shX-4, shY+4); c.stroke(); }
-  if(def.id === "sprinter"){ c.strokeStyle = "#eb3c32"; c.lineWidth = 4; c.beginPath(); c.moveTo(shX-6, shY+8); c.lineTo(hipX+6, hipY-4); c.stroke(); }
-
-  // far arm
-  limb(shX, shY+4, shX-10, -64+bob, shX-4, -44+bob, 9, farCol);
-  // near arm
-  if(attacking && f.atk === "punch"){
-    var px = shX + 18 + ext*46, py = shY + 2;
-    limb(shX, shY+4, shX+16+ext*22, py, px, py, 9.5, body);
-    c.fillStyle = body; c.beginPath(); c.arc(px+4, py, 6.5, 0, Math.PI*2); c.fill();
-  } else if(attacking && f.atk === "special"){
-    var px2 = shX + 16 + ext*62, py2 = shY - 4;
-    limb(shX, shY+4, shX+18+ext*30, py2, px2, py2, 10, body);
-    c.fillStyle = "#ff9a3d"; c.beginPath(); c.arc(px2+6, py2, 6 + ext*7, 0, Math.PI*2); c.fill();
-  } else if(f.blocking){
-    limb(shX, shY+4, shX+15, shY+16, shX+17, shY-16, 9.5, body);
-    limb(shX, shY+4, shX+12, shY+30, shX+19, shY+2, 9, farCol);
-  } else {
-    var armSwing = -walk*10;
-    limb(shX, shY+4, shX+8+armSwing*0.4, -62+bob, shX+13+armSwing, -42+bob, 9.5, body);
-  }
-
-  // head
-  var hx = shX + 3 + lean*0.4, hy = shY - 15 + (f.state==="hurt" ? 2 : 0);
-  c.fillStyle = body; c.beginPath(); c.arc(hx, hy, 12.5, 0, Math.PI*2); c.fill();
-  // mentor sunhat
-  if(def.id === "mentor"){
-    c.fillStyle = "#e5dec9";
-    c.beginPath(); c.ellipse(hx, hy-9, 19, 4.5, -0.06, 0, Math.PI*2); c.fill();
-    c.beginPath(); c.arc(hx, hy-10, 9.5, Math.PI, 0); c.fill();
-  }
-  // rim light: arc on the back/top
-  c.strokeStyle = rim; c.lineWidth = 3; c.globalAlpha = 0.95;
-  c.beginPath(); c.arc(hx, hy, 12.5, Math.PI*1.05, Math.PI*1.75); c.stroke();
-  c.beginPath(); c.moveTo(shX-7, shY+2); c.quadraticCurveTo(shX-9, (shY+hipY)/2, hipX-7, hipY-2); c.stroke();
-  c.globalAlpha = 1;
-  // pill eye
-  c.fillStyle = "#f4f1ea";
-  var eyeX = hx + 6.5, eyeY = hy - 1;
-  if(f.state === "ko"){ c.fillRect(eyeX-3, eyeY-1, 7, 2); }
-  else { c.beginPath(); c.ellipse(eyeX, eyeY, 2.1, 3.4, 0, 0, Math.PI*2); c.fill(); }
-  c.restore();
-}
-
-function drawFighter(c, f){
-  // backlight halo so the black silhouette reads against the dark arena
-  var halo = c.createRadialGradient(f.x, f.y-58, 8, f.x, f.y-58, 96);
-  halo.addColorStop(0, "rgba(238,232,214,0.20)");
-  halo.addColorStop(0.65, "rgba(238,232,214,0.08)");
-  halo.addColorStop(1, "rgba(238,232,214,0)");
-  c.fillStyle = halo;
-  c.fillRect(f.x-96, f.y-154, 192, 160);
-  // shadow
-  var shScale = Math.max(0.4, 1 - (FLOOR - f.y)/340);
-  c.save();
-  c.fillStyle = "rgba(0,0,0,.5)";
-  c.beginPath(); c.ellipse(f.x, FLOOR+8, 34*shScale + 10, 7*shScale + 2, 0, 0, Math.PI*2); c.fill();
-  c.restore();
-  c.save();
-  c.translate(f.x, f.y);
-  if(f.hurtT > 0 && f.state === "hurt" && (frame % 4 < 2)){ c.globalAlpha = 0.75; }
-  drawBody(c, f, 1, frame);
-  c.restore();
-  // special charge glow
-  if(f.meter >= 100 && state === "fight"){
-    c.save(); c.strokeStyle = "rgba(255,154,61," + (0.4 + Math.sin(frame/6)*0.25) + ")"; c.lineWidth = 2;
-    c.beginPath(); c.ellipse(f.x, f.y-58, 30, 62, 0, 0, Math.PI*2); c.stroke(); c.restore();
-  }
-}
-
-function render(){
-  ctx.save();
-  ctx.clearRect(0,0,W,H);
-  if(shake > 0) ctx.translate((Math.random()-0.5)*shake, (Math.random()-0.5)*shake);
-  drawBackground(ctx);
-  drawFighter(ctx, P2);
-  drawFighter(ctx, P1);
-  // particles
-  particles.forEach(function(p){
-    ctx.globalAlpha = Math.max(0, p.life/26);
-    ctx.fillStyle = p.col;
-    ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
-  });
-  ctx.globalAlpha = 1;
-  // floaters
-  ctx.textAlign = "center"; ctx.font = "800 17px 'Avenir Next','Segoe UI',sans-serif";
-  floaters.forEach(function(fl){
-    ctx.globalAlpha = Math.max(0, Math.min(1, fl.life/26));
-    ctx.fillStyle = fl.col; ctx.fillText(fl.txt, fl.x, fl.y);
-  });
-  ctx.globalAlpha = 1;
-  // slow-mo vignette flash on KO
-  if(slowmo > 0){
-    ctx.fillStyle = "rgba(235,60,50," + (slowmo/26*0.13) + ")";
-    ctx.fillRect(0,0,W,H);
-  }
-  ctx.restore();
-}
-
-/* ============================== GO ============================== */
-updatePips(); updateHUD();
-requestAnimationFrame(update);
-
-</script>
+  </div>
+  <script type="module" src="/src/main.js"></script>
 </body>
 </html>
