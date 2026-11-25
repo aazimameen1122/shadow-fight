@@ -1,62 +1,94 @@
-# Shadow Fight
+# Shadow Fight v2
 
-A dark-silhouette browser fighting game. Matte-black fighters with white
-rim-light and pill eyes battle across three arenas in best-of-3 rounds.
+A visceral, responsive 2D silhouette martial arts fighting game — a complete
+re-engineering of the single-file Shadow Fight prototype into a modular
+Vite + vanilla JavaScript project. Pitch-black fighters with warm-white rim
+light, glowing pill eyes and a red moon. No build-time assets, no downloads:
+all art is procedural canvas, all sound is synthesized Web Audio.
 
-**Play it:** enable GitHub Pages for this repo (Settings → Pages → Deploy
-from branch `main`, folder `/ (root)`), then open
-`https://aazimameen1122.github.io/shadow-fight/` — or just open
-`index.html` in any modern browser. No build step, no dependencies.
+## Play it
+
+```bash
+npm install
+npm run dev
+```
+
+Open http://localhost:5173. For a production build: `npm run build`
+(output in `dist/`). GitHub Pages deploys automatically from `main` via
+`.github/workflows/deploy.yml`.
+
+## Modes
+
+- **Arcade Ladder** — a 4-stage gauntlet (Loop → Mentor → Sprinter → Eclipse
+  the boss) across all three arenas, with an S/A/B/C rank at the end.
+- **Versus CPU** — pick both fighters, the stage and the difficulty.
+- **Local 2-Player** — two fighters, one keyboard.
+- **Training Dojo** — infinite timer, regenerating HP, dummy behaviour
+  (Stand / Crouch / Block / Attack), hitbox + hurtbox overlay (`H`),
+  live input history.
 
 ## Fighters
 
-| Fighter | Style |
-| --- | --- |
-| Loop | Balanced all-rounder |
-| Mentor | Heavy hitter — lilac cardigan, sunhat |
-| Sprinter | Fast, light — red sash |
+| Fighter | Style | Weapon | Special |
+| --- | --- | --- | --- |
+| LOOP | Balanced | Ronin blade | Shadow Slash — lunging 3-hit flurry |
+| MENTOR | Heavy | Iron bo staff | Seismic Slam — armored ground slam |
+| SPRINTER | Rushdown | Twin sai | Teleport Flurry — vanish behind the foe, 5 cuts |
+| ECLIPSE | Shadow Boss | Dual phantom blades | Phantom Eclipse — 4 sweeping cuts |
 
-## Arenas
+## Controls
 
-Rooftop Street · Moonlit Lake · Old Courtyard
-
-## How to play
-
-- Best of 3 rounds, 60-second timer per round.
-- Punch, kick, block, jump and build your Special meter for a special move.
-- Combos, hit effects and K.O. slow-motion included. The CPU fights at
-  three difficulty levels.
-
-### Controls
-
-| Action | Keyboard | Touch |
+| Action | Player 1 | Player 2 |
 | --- | --- | --- |
-| Move | A / D or ← / → | On-screen buttons |
-| Jump | W or ↑ | Jump button |
-| Crouch / Block | S or ↓ | Block button |
-| Punch | J | Punch button |
-| Kick | K | Kick button |
-| Special | L | Special button |
+| Move | A / D | Arrow keys |
+| Jump | W | Arrow Up |
+| Crouch / block | S (hold Away to block) | Arrow Down |
+| Light | J (J→J→J chains) | N |
+| Heavy | K | M |
+| Special (full meter) | L | , |
+| Throw | U | . |
+| Dodge roll | Space or I | / |
+| Pause / move list | P or Esc | — |
+| Hitbox overlay (training) | H | — |
 
-## Tech
+Moves: Down+J low kick · Down+K sweep (knockdown) · Up+K anti-air launch ·
+Forward+K lunge · Air+J knee · Air+K dive · Throw beats block · tap Back
+just before impact to **Parry** · blocking fills the Guard gauge (full =
+Guard Break). Double-tap A/D to dash. Touch controls appear on phones.
 
-- Plain HTML, CSS and JavaScript — no frameworks, no build tools.
-- Canvas-rendered silhouette fighters, WebAudio synthesized sound effects.
-- Works on desktop and mobile (touch controls included).
+## Combat systems
+
+60 Hz fixed-timestep logic, 7-frame input buffer, light→heavy→special
+cancels with combo damage scaling, hitstop, pushback, corner wall-splats,
+wake-up invulnerability, guard meter, perfect parry, throws with techs,
+dodge-roll i-frames, and an FSM AI with human reaction buffers
+(Easy ~22f, Normal ~13f, Hard ~7f) and per-fighter personalities.
 
 ## Project structure
 
 ```text
-shadow-fight/
-├── index.html        # Game page (HUD, menus, touch controls)
-├── css/
-│   └── style.css     # All styling
-├── js/
-│   └── game.js       # Game logic, AI, rendering, sound
-├── README.md
-└── LICENSE
+shadow-fight-v2/
+├── index.html
+├── vite.config.js
+├── package.json
+├── .github/workflows/deploy.yml
+└── src/
+    ├── main.js            # game state machine, modes, rounds, camera
+    ├── styles/main.css    # HUD, menus, touch controls
+    ├── config/config.js   # tuning values, stages, difficulties, ladder
+    ├── engine/
+    │   ├── input.js       # buffered controllers (keyboard / touch / AI)
+    │   └── loop.js        # fixed-timestep loop
+    ├── animation/rig.js   # articulated silhouette rig, poses, cloth
+    ├── fighters/fighters.js # roster, move tables, specials
+    ├── combat/combat.js   # fighter state machine, hits, guard, parry
+    ├── ai/ai.js           # FSM AI + training dummy
+    ├── stages/stages.js   # parallax arenas (street / lake / courtyard)
+    ├── audio/audio.js     # procedural Web Audio (whoosh, impact, taiko)
+    ├── vfx/vfx.js         # particles, slash arcs, shockwaves
+    └── ui/ui.js           # menus, HUD, touch controls, move list
 ```
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT — see `LICENSE` in the original Shadow Fight repository.

@@ -1,0 +1,1 @@
+{"description":"Shadow Fight — a visceral 2D silhouette martial arts fighting game. Vite + vanilla JavaScript, zero runtime dependencies.","devDependencies":{"vite":"^6.0.0"},"name":"shadow-fight-v2","scripts":{"build":"vite build","dev":"vite","preview":"vite preview"},"type":"module","version":"2.0.0"}
