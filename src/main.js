@@ -18,6 +18,7 @@ import { UI } from './ui/ui.js';
 
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
+const $ = (id) => document.getElementById(id);
 const NO_INPUT = new Controller();
 
 const audio = new AudioEngine();
@@ -107,6 +108,7 @@ ui.bindTouch(p1ctrl);
   muteBtn.className = 'ghost'; muteBtn.type = 'button';
   const syncMute = () => { muteBtn.textContent = audio.muted ? 'Sound: OFF' : 'Sound: ON'; };
   muteBtn.onclick = () => { audio.ensure(); audio.setMuted(!audio.muted); syncMute(); };
+  syncMute();
   const vol = document.createElement('input');
   vol.type = 'range'; vol.min = 0; vol.max = 1; vol.step = 0.05; vol.value = String(audio.volume);
   vol.style.cssText = 'width:120px;align-self:center;';
